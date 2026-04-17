@@ -1,8 +1,8 @@
 from pathlib import Path
 
+import librosa
 import librosa.display
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import numpy as np
 
 STEM_COLORS = {
@@ -19,18 +19,14 @@ BG_PANEL = "#16213e"
 TICK_COLOR = "#aaaaaa"
 SPINE_COLOR = "#444444"
 
-# Названия нот для piano roll (C1…B7)
-_NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
-PIANO_ROLL_LABELS = [
-    f"{note}{octave}"
-    for octave in range(1, 8)
-    for note in _NOTE_NAMES
-]  # C1, C#1, … B7
+# Все 84 полутона C1–B7
+_NOTES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+ALL_NOTE_LABELS = [f"{n}{o}" for o in range(1, 8) for n in _NOTES]
 
 
 def _style_ax(ax: plt.Axes) -> None:
     ax.set_facecolor(BG_PANEL)
-    ax.tick_params(colors=TICK_COLOR)
+    ax.tick_params(colors=TICK_COLOR, labelsize=8)
     for spine in ax.spines.values():
         spine.set_edgecolor(SPINE_COLOR)
 
@@ -41,8 +37,32 @@ def _add_colorbar(fig: plt.Figure, img, ax: plt.Axes) -> None:
     plt.setp(cbar.ax.yaxis.get_ticklabels(), color=TICK_COLOR, fontsize=8)
 
 
-def plot_stem(
+def plot_chroma(
     chroma: np.ndarray,
+    stem_name: str,
+    output_path: Path,
+    sr: int,
+    hop_length: int,
+) -> None:
+    color = STEM_COLORS.get(stem_name, "#ffffff")
+    fig, ax = plt.subplots(figsize=(18, 4), facecolor=BG_DARK)
+    _style_ax(ax)
+
+    img = librosa.display.specshow(
+        chroma, y_axis="chroma", x_axis="time",
+        ax=ax, sr=sr, hop_length=hop_length, cmap="magma",
+    )
+    ax.set_title(f"{stem_name.upper()} — Хромаграмма", color=color, fontsize=13, fontweight="bold")
+    ax.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=9)
+    ax.set_ylabel("Класс ноты", color=TICK_COLOR, fontsize=9)
+    _add_colorbar(fig, img, ax)
+
+    plt.tight_layout(pad=1.5)
+    fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor=BG_DARK)
+    plt.close(fig)
+
+
+def plot_piano_roll(
     cqt_db: np.ndarray,
     stem_name: str,
     output_path: Path,
@@ -50,37 +70,33 @@ def plot_stem(
     hop_length: int,
 ) -> None:
     color = STEM_COLORS.get(stem_name, "#ffffff")
-    fig, (ax_chroma, ax_roll) = plt.subplots(
-        1, 2,
-        figsize=(24, 5),
-        facecolor=BG_DARK,
-        gridspec_kw={"width_ratios": [1, 1.4]},
-    )
+    n_bins = cqt_db.shape[0]  # обычно 84
 
-    # --- Хромаграмма (левая панель) ---
-    _style_ax(ax_chroma)
-    img_c = librosa.display.specshow(
-        chroma, y_axis="chroma", x_axis="time",
-        ax=ax_chroma, sr=sr, hop_length=hop_length, cmap="magma",
-    )
-    ax_chroma.set_title("Хромаграмма", color=color, fontsize=12, fontweight="bold")
-    ax_chroma.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=9)
-    ax_chroma.set_ylabel("Класс ноты", color=TICK_COLOR, fontsize=9)
-    _add_colorbar(fig, img_c, ax_chroma)
+    # Высота: ~14px на полутон при dpi=150 → ~0.093 дюйма на строку
+    fig_h = max(10, round(n_bins * 0.093))
+    fig, ax = plt.subplots(figsize=(18, fig_h), facecolor=BG_DARK)
+    _style_ax(ax)
 
-    # --- Piano roll / CQT (правая панель) ---
-    _style_ax(ax_roll)
-    img_r = librosa.display.specshow(
+    img = librosa.display.specshow(
         cqt_db, y_axis="cqt_note", x_axis="time",
-        ax=ax_roll, sr=sr, hop_length=hop_length,
+        ax=ax, sr=sr, hop_length=hop_length,
         fmin=librosa.note_to_hz("C1"), cmap="magma",
     )
-    ax_roll.set_title("Piano roll (CQT)", color=color, fontsize=12, fontweight="bold")
-    ax_roll.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=9)
-    ax_roll.set_ylabel("Нота + октава", color=TICK_COLOR, fontsize=9)
-    _add_colorbar(fig, img_r, ax_roll)
+    ax.set_title(f"{stem_name.upper()} — Piano roll (CQT)", color=color, fontsize=13, fontweight="bold")
+    ax.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=9)
+    ax.set_ylabel("Нота + октава", color=TICK_COLOR, fontsize=9)
 
-    fig.suptitle(stem_name.upper(), color=color, fontsize=18, fontweight="bold", y=1.02)
+    # Подпись каждого полутона по Y
+    ax.yaxis.set_major_locator(plt.MultipleLocator(1))
+    ax.set_yticks(range(n_bins))
+    ax.set_yticklabels(ALL_NOTE_LABELS[:n_bins], fontsize=7)
+
+    # Горизонтальные линии на границах октав (каждые 12 полутонов)
+    for i in range(0, n_bins, 12):
+        ax.axhline(y=i - 0.5, color=SPINE_COLOR, linewidth=0.8, linestyle="--")
+
+    _add_colorbar(fig, img, ax)
+
     plt.tight_layout(pad=1.5)
     fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor=BG_DARK)
     plt.close(fig)
