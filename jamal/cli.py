@@ -14,7 +14,7 @@ STEM_ORDER = ["vocals", "guitar", "piano", "bass", "drums", "other"]
 def main() -> None:
     parser = argparse.ArgumentParser(
         prog="jamal",
-        description="Разложить MP3 на stems и визуализировать хромаграммы",
+        description="Разложить MP3 на stems и визуализировать хромаграммы + piano roll",
     )
     parser.add_argument("audio", type=Path, help="Путь к MP3-файлу")
     args = parser.parse_args()
@@ -35,8 +35,8 @@ def main() -> None:
     )
 
     from jamal.separate import separate
-    from jamal.extract import extract_chroma
-    from jamal.visualize import plot_chroma
+    from jamal.extract import extract_chroma, extract_cqt
+    from jamal.visualize import plot_stem
     from jamal.compose import compose
 
     with Progress(
@@ -60,10 +60,11 @@ def main() -> None:
             TimeElapsedColumn(),
             console=console,
         ) as progress:
-            task = progress.add_task(f"[cyan]Хромаграмма:[/cyan] {name}", total=None)
+            task = progress.add_task(f"[cyan]Визуализация:[/cyan] {name}", total=None)
             chroma, sr, hop_length = extract_chroma(wav_path)
+            cqt_db, _, _ = extract_cqt(wav_path)
             png_path = output_dir / f"{name}.png"
-            plot_chroma(chroma, name, png_path, sr, hop_length)
+            plot_stem(chroma, cqt_db, name, png_path, sr, hop_length)
             png_paths.append(png_path)
             progress.update(task, description=f"[green]Сохранено:[/green] {png_path.name}")
 
