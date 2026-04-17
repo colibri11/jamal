@@ -77,23 +77,25 @@ def plot_piano_roll(
     fig, ax = plt.subplots(figsize=(18, fig_h), facecolor=BG_DARK)
     _style_ax(ax)
 
+    fmin = librosa.note_to_hz("C1")
+    freqs = librosa.cqt_frequencies(n_bins=n_bins, fmin=fmin)
+
     img = librosa.display.specshow(
         cqt_db, y_axis="cqt_note", x_axis="time",
         ax=ax, sr=sr, hop_length=hop_length,
-        fmin=librosa.note_to_hz("C1"), cmap="magma",
+        fmin=fmin, cmap="magma",
     )
     ax.set_title(f"{stem_name.upper()} — Piano roll (CQT)", color=color, fontsize=13, fontweight="bold")
     ax.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=9)
     ax.set_ylabel("Нота + октава", color=TICK_COLOR, fontsize=9)
 
-    # Подпись каждого полутона по Y
-    ax.yaxis.set_major_locator(plt.MultipleLocator(1))
-    ax.set_yticks(range(n_bins))
+    # Подпись каждого полутона — позиции в Гц, как их видит librosa
+    ax.set_yticks(freqs)
     ax.set_yticklabels(ALL_NOTE_LABELS[:n_bins], fontsize=7)
 
-    # Горизонтальные линии на границах октав (каждые 12 полутонов)
+    # Горизонтальные линии на границах октав (каждые 12 полутонов = одна октава)
     for i in range(0, n_bins, 12):
-        ax.axhline(y=i - 0.5, color=SPINE_COLOR, linewidth=0.8, linestyle="--")
+        ax.axhline(y=freqs[i], color=SPINE_COLOR, linewidth=0.8, linestyle="--")
 
     _add_colorbar(fig, img, ax)
 
