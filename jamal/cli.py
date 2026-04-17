@@ -9,6 +9,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 console = Console()
 
 STEM_ORDER = ["vocals", "guitar", "piano", "bass", "drums", "other"]
+PITCH_STEMS = {"vocals", "bass"}  # монофонические — pyin имеет смысл
 
 
 def main() -> None:
@@ -68,16 +69,18 @@ def main() -> None:
             png_paths.append(chroma_png)
 
             cqt_db, _, _ = extract_cqt(wav_path)
-            roll_png = output_dir / f"{name}_roll.png"
-            plot_piano_roll(cqt_db, name, roll_png, sr, hop)
-            png_paths.append(roll_png)
 
-            f0, voiced_flag, _, _ = extract_pitch(wav_path)
-            pitch_png = output_dir / f"{name}_pitch.png"
-            plot_pitch_overlay(cqt_db, f0, voiced_flag, name, pitch_png, sr, hop)
-            png_paths.append(pitch_png)
-
-            progress.update(task, description=f"[green]Сохранено:[/green] {name}_chroma + _roll + _pitch")
+            if name in PITCH_STEMS:
+                f0, voiced_flag, _, _ = extract_pitch(wav_path)
+                pitch_png = output_dir / f"{name}_pitch.png"
+                plot_pitch_overlay(cqt_db, f0, voiced_flag, name, pitch_png, sr, hop)
+                png_paths.append(pitch_png)
+                progress.update(task, description=f"[green]Сохранено:[/green] {name}_chroma + _pitch")
+            else:
+                roll_png = output_dir / f"{name}_roll.png"
+                plot_piano_roll(cqt_db, name, roll_png, sr, hop)
+                png_paths.append(roll_png)
+                progress.update(task, description=f"[green]Сохранено:[/green] {name}_chroma + _roll")
 
     combined_path = output_dir / "combined.png"
     console.print("[yellow]Сборка итоговой картинки...[/yellow]")
