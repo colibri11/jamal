@@ -9,7 +9,7 @@ from demucs.pretrained import get_model
 
 MODEL_NAME = "htdemucs_6s"
 SHIFTS = 4
-RMS_THRESHOLD = 0.002  # стемы тише этого порога считаются пустыми
+RMS_THRESHOLD = 0.01  # стемы тише этого порога считаются пустыми
 
 
 def separate(audio_path: Path, output_dir: Path) -> dict[str, Path]:
