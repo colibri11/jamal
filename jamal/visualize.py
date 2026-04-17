@@ -8,6 +8,8 @@ STEM_COLORS = {
     "vocals": "#e63946",
     "drums": "#457b9d",
     "bass": "#2a9d8f",
+    "guitar": "#f4a261",
+    "piano": "#a8dadc",
     "other": "#e9c46a",
 }
 

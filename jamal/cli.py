@@ -8,7 +8,7 @@ from rich.progress import Progress, SpinnerColumn, TextColumn, TimeElapsedColumn
 
 console = Console()
 
-STEM_ORDER = ["vocals", "drums", "bass", "other"]
+STEM_ORDER = ["vocals", "guitar", "piano", "bass", "drums", "other"]
 
 
 def main() -> None:
