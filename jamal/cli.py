@@ -35,8 +35,8 @@ def main() -> None:
     )
 
     from jamal.separate import separate
-    from jamal.extract import extract_chroma, extract_cqt
-    from jamal.visualize import plot_chroma, plot_piano_roll
+    from jamal.extract import extract_chroma, extract_cqt, extract_pitch
+    from jamal.visualize import plot_chroma, plot_piano_roll, plot_pitch_overlay
     from jamal.compose import compose
 
     with Progress(
@@ -72,7 +72,12 @@ def main() -> None:
             plot_piano_roll(cqt_db, name, roll_png, sr, hop)
             png_paths.append(roll_png)
 
-            progress.update(task, description=f"[green]Сохранено:[/green] {name}_chroma + {name}_roll")
+            f0, voiced_flag, _, _ = extract_pitch(wav_path)
+            pitch_png = output_dir / f"{name}_pitch.png"
+            plot_pitch_overlay(cqt_db, f0, voiced_flag, name, pitch_png, sr, hop)
+            png_paths.append(pitch_png)
+
+            progress.update(task, description=f"[green]Сохранено:[/green] {name}_chroma + _roll + _pitch")
 
     combined_path = output_dir / "combined.png"
     console.print("[yellow]Сборка итоговой картинки...[/yellow]")

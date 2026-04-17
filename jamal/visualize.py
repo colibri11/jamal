@@ -102,3 +102,52 @@ def plot_piano_roll(
     plt.tight_layout(pad=1.5)
     fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor=BG_DARK)
     plt.close(fig)
+
+
+def plot_pitch_overlay(
+    cqt_db: np.ndarray,
+    f0: np.ndarray,
+    voiced_flag: np.ndarray,
+    stem_name: str,
+    output_path: Path,
+    sr: int,
+    hop_length: int,
+) -> None:
+    """CQT-фон + линия точного питча (pyin). Большой формат."""
+    color = STEM_COLORS.get(stem_name, "#ffffff")
+    n_bins = cqt_db.shape[0]
+    fmin = librosa.note_to_hz("C1")
+    freqs = librosa.cqt_frequencies(n_bins=n_bins, fmin=fmin)
+
+    fig_h = max(14, round(n_bins * 0.11))
+    fig, ax = plt.subplots(figsize=(28, fig_h), facecolor=BG_DARK)
+    _style_ax(ax)
+
+    img = librosa.display.specshow(
+        cqt_db, y_axis="cqt_note", x_axis="time",
+        ax=ax, sr=sr, hop_length=hop_length,
+        fmin=fmin, cmap="magma",
+    )
+
+    ax.set_yticks(freqs)
+    ax.set_yticklabels(ALL_NOTE_LABELS[:n_bins], fontsize=7)
+    for i in range(0, n_bins, 12):
+        ax.axhline(y=freqs[i], color=SPINE_COLOR, linewidth=0.8, linestyle="--")
+
+    # Линия питча — только voiced фреймы, бирюзовым поверх фона
+    times = librosa.times_like(f0, sr=sr, hop_length=hop_length)
+    f0_voiced = np.where(voiced_flag, f0, np.nan)
+    ax.plot(times, f0_voiced, color="#00ffcc", linewidth=1.2, alpha=0.9, label="Питч (pyin)")
+
+    ax.set_title(
+        f"{stem_name.upper()} — Питч + Piano roll",
+        color=color, fontsize=15, fontweight="bold",
+    )
+    ax.set_xlabel("Время (сек)", color=TICK_COLOR, fontsize=10)
+    ax.set_ylabel("Нота + октава", color=TICK_COLOR, fontsize=10)
+    ax.legend(loc="upper right", facecolor=BG_PANEL, labelcolor="#00ffcc", fontsize=9)
+    _add_colorbar(fig, img, ax)
+
+    plt.tight_layout(pad=1.5)
+    fig.savefig(output_path, dpi=150, bbox_inches="tight", facecolor=BG_DARK)
+    plt.close(fig)

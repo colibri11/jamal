@@ -14,6 +14,20 @@ def extract_chroma(audio_path: Path) -> tuple[np.ndarray, int, int]:
     return chroma, sr, hop_length
 
 
+def extract_pitch(audio_path: Path) -> tuple[np.ndarray, np.ndarray, int, int]:
+    """Возвращает (f0_hz, voiced_flag, sr, hop_length) через pyin."""
+    y, sr = librosa.load(str(audio_path), sr=None, mono=True)
+    hop_length = 512
+    f0, voiced_flag, _ = librosa.pyin(
+        y,
+        fmin=librosa.note_to_hz("C2"),
+        fmax=librosa.note_to_hz("C7"),
+        sr=sr,
+        hop_length=hop_length,
+    )
+    return f0, voiced_flag, sr, hop_length
+
+
 def extract_cqt(audio_path: Path) -> tuple[np.ndarray, int, int]:
     y, sr = librosa.load(str(audio_path), sr=None, mono=True)
     hop_length = 512
