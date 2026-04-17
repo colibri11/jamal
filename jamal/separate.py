@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import librosa
+import numpy as np
+import soundfile as sf
 import torch
-import torchaudio
 from demucs.apply import apply_model
-from demucs.audio import save_audio
 from demucs.pretrained import get_model
 
 
@@ -11,10 +12,10 @@ def separate(audio_path: Path, output_dir: Path) -> dict[str, Path]:
     model = get_model("htdemucs")
     model.eval()
 
-    wav, sr = torchaudio.load(audio_path)
-
-    if sr != model.samplerate:
-        wav = torchaudio.functional.resample(wav, sr, model.samplerate)
+    y, _ = librosa.load(str(audio_path), sr=model.samplerate, mono=False)
+    if y.ndim == 1:
+        y = np.stack([y, y])
+    wav = torch.from_numpy(y).float()
 
     if wav.shape[0] == 1:
         wav = wav.repeat(2, 1)
@@ -30,7 +31,8 @@ def separate(audio_path: Path, output_dir: Path) -> dict[str, Path]:
     stem_paths: dict[str, Path] = {}
     for source, name in zip(sources, model.sources):
         path = output_dir / f"{name}.wav"
-        save_audio(source, str(path), model.samplerate)
+        audio_np = source.numpy().T  # (samples, channels)
+        sf.write(str(path), audio_np, model.samplerate)
         stem_paths[name] = path
 
     return stem_paths
