@@ -1,6 +1,11 @@
 ---
 name: jamal
 description: Analyze an audio file (MP3/WAV) using jamal — stem separation, chromagram, piano roll, and pitch visualization. Use when the user wants to analyze music, understand its structure, evaluate it aesthetically, or compare tracks.
+metadata:
+  openclaw:
+    emoji: "🎹"
+    requires:
+      bins: ["uv"]
 ---
 
 You are analyzing an audio file using the `jamal` tool. Follow these steps precisely.
@@ -11,22 +16,23 @@ If the user did not provide a path, ask for it. Accept MP3 or WAV files.
 
 ## Step 2 — Run jamal
 
-Run the following command using the Bash tool:
-
+**Claude Code:**
 ```bash
-uv run jamal <path_to_file>
+cd ${CLAUDE_SKILL_DIR} && uv run jamal <path_to_file>
 ```
 
-Wait for it to complete. It takes 2–5 minutes on CPU (Demucs separation is the slow part). Keep the user informed.
-
-If `uv` is not found, try:
+**OpenClaw:**
 ```bash
-cd <project_dir> && uv run jamal <path_to_file>
+{baseDir}/scripts/analyze.sh <path_to_file>
 ```
+
+The script runs directly from the skill directory — no separate installation step required.
+
+Wait for completion. It takes 2–5 minutes on CPU (Demucs separation is the slow part). Keep the user informed with a brief status message.
 
 ## Step 3 — Locate the output
 
-Output is saved to a folder named after the audio file, in the same directory. For example:
+Output is saved to a folder named after the audio file, in the same directory as the file. For example:
 `/path/to/Song_Name/`
 
 It contains:
@@ -44,7 +50,7 @@ It contains:
 | `other_roll.png` | CQT piano roll for residual |
 | `combined.png` | all of the above stacked vertically |
 
-Stems not present (RMS below threshold) are skipped automatically — this means the instrument is absent or inaudible in the track.
+Stems not present (RMS below threshold) are skipped automatically — the instrument is absent or inaudible in the track.
 
 ## Step 4 — View and analyze each image
 
@@ -79,7 +85,7 @@ After analysis, provide:
 2. **Voice/instrument character**: what kind of voice/playing is this? Register, technique, expressiveness
 3. **Harmonic language**: what pitch classes dominate? What mode or tonal center?
 4. **Emotional arc**: how does energy/register/density evolve over time?
-5. **Aesthetic impression**: describe what the visualizations convey beyond the technical — texture, color, tension, release
+5. **Aesthetic impression**: describe what the visualizations convey beyond the technical — texture, colour, tension, release
 
 Be direct and specific. Refer to exact timestamps and note names when possible. This is not a summary — it is an analysis that should reveal something non-obvious.
 
