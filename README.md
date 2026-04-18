@@ -78,9 +78,13 @@ Results are not cached automatically. Re-running on the same file overwrites the
 
 ## Agent integration
 
-A Claude Code skill is included at `.claude/skills/jamal.md`. Copy it to `~/.claude/skills/` (user-wide) or keep it in the project for project-level access.
+A Claude Code skill is included at `skill.md`. To install:
 
-Invoke with `/jamal` inside a Claude Code session. The skill instructs the agent to:
+```bash
+cp skill.md ~/.claude/skills/jamal.md
+```
+
+Then invoke with `/jamal` inside any Claude Code session. The skill instructs the agent to:
 - run `uv run jamal <file>`
 - view the output images
 - perform structured musical and aesthetic analysis
